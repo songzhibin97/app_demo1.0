@@ -1,0 +1,141 @@
+@font-face {font-family: "iconfont";
+  src: url('../fonts/iconfont.ttf?t=1564157161810') format('truetype'), /* chrome, firefox, opera, Safari, Android, iOS 4.2+ */
+  url('../fonts/iconfont.svg?t=1564157161810#iconfont') format('svg'); /* iOS 4.1- */
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-miniplayer_stop_icon:before {
+  content: "\e61b";
+}
+
+.icon-stop_white:before {
+  content: "\e62a";
+}
+
+.icon-music1:before {
+  content: "\e501";
+}
+
+.icon-mystep:before {
+  content: "\e627";
+}
+
+.icon-dingxiangmamazhishifufeiqianduaniconfont:before {
+  content: "\e60c";
+}
+
+.icon-myicon:before {
+  content: "\e61f";
+}
+
+.icon-zhuye:before {
+  content: "\e502";
+}
+
+.icon-relation-graphicon-qq_and_wechat_friends:before {
+  content: "\e672";
+}
+
+.icon--zhangyu:before {
+  content: "\e611";
+}
+
+.icon--nainiu:before {
+  content: "\e612";
+}
+
+.icon--kaola:before {
+  content: "\e613";
+}
+
+.icon--huli:before {
+  content: "\e614";
+}
+
+.icon--xiaozhu:before {
+  content: "\e615";
+}
+
+.icon--xiaomao:before {
+  content: "\e616";
+}
+
+.icon--mifeng:before {
+  content: "\e617";
+}
+
+.icon--xiaohou:before {
+  content: "\e618";
+}
+
+.icon--qingwa:before {
+  content: "\e619";
+}
+
+.icon--xiaogou:before {
+  content: "\e61a";
+}
+
+.icon--xiaolu:before {
+  content: "\e61c";
+}
+
+.icon--xiaoxiong:before {
+  content: "\e61d";
+}
+
+.icon--xiaoji:before {
+  content: "\e61e";
+}
+
+.icon--xiongmao:before {
+  content: "\e620";
+}
+
+.icon--maotouying:before {
+  content: "\e621";
+}
+
+.icon--daxiang:before {
+  content: "\e622";
+}
+
+.icon--xiaoyang:before {
+  content: "\e623";
+}
+
+.icon--xiaotu:before {
+  content: "\e624";
+}
+
+.icon--wugui:before {
+  content: "\e625";
+}
+
+.icon--laohu-:before {
+  content: "\e626";
+}
+
+.icon--qie:before {
+  content: "\e628";
+}
+
+.icon--pangxie:before {
+  content: "\e629";
+}
+
+.icon--shizi:before {
+  content: "\e62b";
+}
+
+.icon--laoshu:before {
+  content: "\e62c";
+}
+

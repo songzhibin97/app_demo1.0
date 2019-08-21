@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/iconfont.css"/>
+
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <h1 class="mui-title">音乐/点播</h1>
+</header>
+<div class="mui-content">
+    <!-- 九宫格 -->
+    <ul class="mui-table-view mui-grid-view mui-grid-9">
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a href="#" id='story'>
+                <span class="mui-icon iconfont icon--qie"></span>
+                <div class="mui-media-body">故事</div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a href="#" id='nursery_rhyme'>
+                <span class="mui-icon iconfont icon--shizi"></span>
+                <div class="mui-media-body">儿歌</div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a href="#">
+                <span class="mui-icon iconfont icon--xiaolu"></span>
+                <div class="mui-media-body">文学</div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a href="#">
+                <span class="mui-icon iconfont icon--zhangyu"></span>
+                <div class="mui-media-body">诗词</div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a href="#">
+                <span class="mui-icon iconfont icon--daxiang"></span>
+                <div class="mui-media-body">科普</div>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a href="#">
+                <span class="mui-icon iconfont icon--xiaoyang"></span>
+                <div class="mui-media-body">英语</div>
+            </a>
+        </li>
+    </ul>
+
+    <!-- 图文列表加载音频详情 -->
+    <div id="Refresh">
+        <ul class="mui-table-view" id="m_list">
+        </ul>
+    </div>
+</div>
+
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+	var subject = "story"
+	var count = 0; // 设置刚打开app欢迎语 只在启动自动刷新弹出并加载
+    mui.init({
+        swipeBack: true, //启用右滑关闭功能
+        pullRefresh: {
+            container: "#Refresh", //下拉刷新容器标识，querySelector能定位的css选择器均可，比如：id、.class等
+            down: {
+                style: 'circle', //必选，下拉刷新样式，目前支持原生5+ ‘circle’ 样式
+                color: '#2BD009', //可选，默认“#2BD009” 下拉刷新控件颜色
+                height: '50px', //可选,默认50px.下拉刷新控件的高度,
+                range: '100px', //可选 默认100px,控件可下拉拖拽的范围
+                offset: '0px', //可选 默认0px,下拉刷新控件的起始位置
+                callback: pulldownRefresh
+            },
+            up: {
+                contentrefresh: "正在努力加载啦", //可选，正在加载状态时，上拉加载控件上显示的标题内容
+                contentnomore: '没有更多数据了', //可选，请求完毕若没有更多数据时显示的提醒内容；
+                callback: pullupRefresh //必选，刷新函数，根据具体业务来编写，比如通过ajax从服务器获取新数据；
+            }
+        }
+    });
+    mui.back = function () {
+        mui.toast("当前页面不能返回")
+    };
+    
+    
+    mui.plusReady(
+        function () {
+            post_m_list(count, 'down')
+            count += 1
+        }
+    );
+    // 下拉触发事件
+    function pulldownRefresh() { // 下拉事件
+        setTimeout(function () { //设置超时时间
+            post_m_list(count, 'down');
+            count += 1
+        }, 150);
+        mui('#Refresh').pullRefresh().endPulldownToRefresh() //结束动画
+    }
+
+    function pullupRefresh() { //上拉事件
+        setTimeout(function () { //设置超时时间
+            post_m_list(count, 'up');
+            count += 1
+        }, 150);
+    }
+
+    function post_m_list(count, model) { // 封装 内调用post请求向服务端发送请求并调用create_m_list 创建图文列表
+        mui.ajax('http://' + window.Client_ip + ':5000/audios/' + subject + "/" + count, {
+            dataType: 'json', //服务器返回json格式数据
+            type: 'post', //HTTP请求类型
+            timeout: 10000, //超时时间设置为10秒；
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            success: function (data) {
+                //服务器返回响应，根据响应结果，分析是否登录成功；
+                if (data.data_code == 200) {
+                    if (model == "down") {
+                        document.getElementById("m_list").innerHTML = ""
+                    }
+                    for (var i = 0; i < data.data_conent.length; i++) {
+                        create_m_list(data.data_conent[i], model)
+                    }
+                } else {
+                    mui.toast(data.error_message);
+                    mui('#Refresh').pullRefresh().endPullupToRefresh(true);
+                }
+            },
+            error: function (xhr, type, errorThrown) {
+                //异常处理；
+                mui.toast("网络异常")
+            }
+        });
+    }
+
+    function create_m_list(data, model) { //创建函数 动态创建图文列表
+        var li = document.createElement('li');
+        li.className = "mui-table-view-cell mui-media";
+        var a = document.createElement('a');
+        a.onclick = function () {
+            mui.openWindow({
+                url: 'playing.html',
+                id: 'playing.html',
+                extras: {
+                    "data": data
+                }
+            })
+        };
+        var img = document.createElement('img');
+        img.className = "mui-media-object mui-pull-left";
+        img.src = data.cover_url;
+        var div = document.createElement('div');
+        div.className = "mui-media-body";
+        div.innerText = data.title;
+        var p = document.createElement('p');
+        p.className = "mui-ellipsis";
+        p.innerText = data.intro;
+        li.appendChild(a);
+        a.appendChild(img);
+        a.appendChild(div);
+        div.appendChild(p);
+        document.getElementById("m_list").appendChild(li);
+        if (model == 'down') {
+            mui('#Refresh').pullRefresh().endPulldownToRefresh(); //结束下拉动画
+        } else if (model == "up") {
+            mui('#Refresh').pullRefresh().endPullupToRefresh(false); //结束上拉动画
+        }
+    }
+	// 设置监听事件切换不同种类音频
+	document.getElementById("story").addEventListener("tap",function(){
+		subject = "story"
+		count = 0
+		post_m_list(count, "down")
+	})
+	document.getElementById("nursery_rhyme").addEventListener("tap",function(){
+		subject = "nursery_rhyme"
+		count = 0
+		post_m_list(count, "down")
+	})
+	
+</script>
+</body>
+</html>

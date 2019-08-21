@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/iconfont.css"/>
+</head>
+<body>
+<nav class="mui-bar mui-bar-tab">
+    <a class="mui-tab-item mui-active" id='home'>
+        <span class="mui-icon iconfont icon-zhuye"></span>
+        <span class="mui-tab-label">首页</span>
+    </a>
+    <a class="mui-tab-item" id="music">
+        <span class="mui-icon iconfont icon-music1"></span>
+        <span class="mui-tab-label">音乐/点播</span>
+    </a>
+    <a class="mui-tab-item" id="friends">
+
+        <span class="mui-icon iconfont icon-relation-graphicon-qq_and_wechat_friends"><span
+                class="mui-badge mui-badge-primary" id="unread_message" style="display:none;"></span></span>
+        <span class="mui-tab-label">好友</span>
+
+    </a>
+    <a class="mui-tab-item" id="Mine">
+        <span class="mui-icon iconfont icon-myicon"></span>
+        <span class="mui-tab-label">我的</span>
+    </a>
+</nav>
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    // WebSocket对象
+    var ws = null;
+    // 未读消息列表
+    var unread_message_list = null;
+    mui.init({
+        subpages: [{
+            url: 'main.html',
+            id: 'main.html',
+            styles: {
+                top: '0px', //mui标题栏默认高度为45px；
+                bottom: '50px' //默认为0px，可不定义；
+            }
+        }]
+    });
+    if (window.localStorage.getItem("id")) {
+        create_ws();
+        get_message_number(window.localStorage.getItem("id"))
+    }
+    // 设置事件监听 登陆成功后返回user_home 页面
+    document.addEventListener("go_user_info", function (data) {
+        if (data.detail.code == "200") {
+            create_ws();
+            get_message_number(window.localStorage.getItem("id"));
+            mui.openWindow({
+                url: "user_home.html",
+                id: "user_home.html",
+                styles: {
+                    top: "0px",
+                    bottom: '50px'
+                },
+                extras: {
+                    data: data.detail.data
+                }
+            })
+        }
+    });
+    // 监听chats发送消息事件
+    document.addEventListener("send_toy_audio", function (send_data) {
+        var data = send_data.detail; //{"toy_id":toy_id,"data":data}
+        var chats = plus.webview.getWebviewById("chats.html");
+        mui.fire(chats, "create_message", data);
+        ws.send(JSON.stringify(data))
+    });
+    
+    // 向后端请求该id的未读总数以及分别对应数
+    function get_message_number(to_id) {
+        mui.ajax('http://' + window.Client_ip + ':5000/get_unread_message_num/' + to_id, {
+            dataType: 'json',//服务器返回json格式数据
+            type: 'get',//HTTP请求类型
+            timeout: 1000,//超时时间设置为10秒；
+            success: function (data) {
+                // data = {"code":200,"count":num,unread_message_list:[{"from":"","message":num,"to":""}]}
+                // 判断返回状态
+                if (data.code == 200) {
+                    // 判断count是否为0 有未读消息
+                    if (data.count != 0) {
+                        document.getElementById("unread_message").innerText = data.count;
+                        document.getElementById("unread_message").style.display = "block";
+                        unread_message_list = data.unread_message_list
+                    }
+                } else {
+                    mui.toast(data.error)
+                }
+            },
+            error: function (xhr, type, errorThrown) {
+                alert("网络错误");
+
+            }
+        });
+    }
+
+    // 监控friends.html unread_message事件
+    document.addEventListener("unread_message", function (data) {
+        var count = parseInt(document.getElementById("unread_message").innerText);
+        var from_id = data.detail.from_id;
+        var fire_num = parseInt(data.detail.data);
+        var difference_num = null;
+        for (var i = 0; i < unread_message_list.length; i++) {
+
+            if (unread_message_list[i] && unread_message_list[i].from == from_id) {
+                delete unread_message_list[i]
+            }
+        }
+
+
+        if (count == NaN || fire_num == NaN) {
+            return
+        }
+        difference_num = count - fire_num;
+        if (difference_num >= 1) {
+
+            document.getElementById("unread_message").innerText = difference_num
+        }
+        if (difference_num == 0) {
+
+            document.getElementById("unread_message").innerText = 0;
+            document.getElementById("unread_message").style.display = "none"
+        }
+
+    });
+
+    // 点击#首页 按钮返回首页
+    document.getElementById('home').addEventListener('tap', function () {
+        mui.openWindow({
+            url: "main.html",
+            styles: {
+                top: "0px",
+                bottom: '50px'
+            },
+        })
+    });
+    // 点击#音乐/点播 按钮跳转至music页面
+    document.getElementById("music").addEventListener('tap', function () {
+        mui.openWindow({
+            url: "music.html",
+            id: 'music.html',
+            styles: {
+                top: "0px",
+                bottom: '50px'
+            }
+        })
+    });
+    // 点击#好友 按钮跳转至friends页面
+
+    document.getElementById("friends").addEventListener("tap", function () {
+        mui.openWindow({
+            url: 'friends.html',
+            id: 'friends.html',
+            styles: {
+                top: "0px",
+                bottom: '50px'
+            },
+            extras: {
+                "data": unread_message_list
+            },
+            createNew: true
+        })
+    });
+    // 点击#我的 按钮跳转至login页面
+    document.getElementById('Mine').addEventListener('tap', function () {
+
+        if (window.localStorage.getItem("id")) {
+            mui.post('http://' + window.Client_ip + ":5000/check_user", {
+                "id": window.localStorage.getItem("id")
+            }, function (data) {
+                if (data.code == 200) {
+                    // 校验成功 连接WebSocket
+                    create_ws();
+                    mui.openWindow({
+                        url: 'user_home.html',
+                        id: 'user_home.html',
+                        styles: {
+                            top: "0px",
+                            bottom: '50px'
+                        },
+                        extras: {
+                            "data": data
+                        }
+                    })
+                } else if (data.code == 404) {
+                    mui.toast("登录已失效");
+                    window.localStorage.removeItem("id");
+                    mui.openWindow({
+                        url: "login.html",
+                        id: "login.html",
+                        styles: {
+                            top: "0px",
+                            bottom: '50px'
+                        }
+                    })
+                }
+            }, 'json');
+        } else {
+            mui.openWindow({
+                url: "login.html",
+                id: "login.html",
+                styles: {
+                    top: "0px",
+                    bottom: '50px'
+                }
+            })
+        }
+    });
+    // 创建WebSocket连接
+    function create_ws() {
+        ws = new WebSocket("ws://" + window.Client_ip + ':5050/app/' + window.localStorage.getItem("id")); // 设置监听事件 向玩具端发送对应信息
+        ws.onmessage = function (send_data) {
+            window.location.reload();
+            var new_data = JSON.parse(send_data.data);
+            var chats = plus.webview.getWebviewById("chats.html");
+            var friends = plus.webview.getWebviewById("friends.html");
+            mui.fire(chats, "create_message", {"data": new_data});
+            mui.fire(friends, "refresh")
+        };
+        ws.onclose = function () {
+            // 断线重新创建ws对象
+            create_ws();
+        };
+    }
+</script>
+</body>
+</html>

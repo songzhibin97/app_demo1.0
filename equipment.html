@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <h1 class="mui-title">我的设备</h1>
+</header>
+<div class="mui-content">
+    <ul class="mui-table-view" id="equipment_list">
+        <li class="mui-table-view-cell mui-media">
+            <a href="javascript:;" id="scanning">
+                <img class="mui-media-object mui-pull-left" src="image/friend.jpeg">
+                <div class="mui-media-body">
+                    添加设备
+                </div>
+            </a>
+        </li>
+    </ul>
+</div>
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    mui.init();
+    mui.plusReady(function () {
+        // 打开页面 自动请求好友数据
+        mui.ajax('http://' + window.Client_ip + ':5000/get_equipment', {
+            data: {
+                "id": window.localStorage.getItem("id"),
+                "type": "app"
+            },
+            dataType: 'json', //服务器返回json格式数据
+            type: 'POST', //HTTP请求类型
+            timeout: 1000, //超时时间设置为10秒；
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            success: function (data) {
+                if (data.code == 200) {
+                    if (data.equipments == []) {
+                        return
+                    } else {
+                        for (var i = 0; i < data.equipments.length; i++) {
+                            create_m_list(data.equipments[i])
+                        }
+                    }
+
+                } else {
+                    mui.toast(data.error);
+                }
+            },
+            error: function (xhr, type, errorThrown) {
+                alert("网络错误");
+
+            }
+        });
+
+        // 生成图文列表函数
+        function create_m_list(data) { //创建函数 动态创建图文列表
+            var li = document.createElement('li');
+            li.className = "mui-table-view-cell mui-media";
+            var a = document.createElement('a');
+            a.id = data.or_key
+            // 添加点击事件 点击进入玩具详情
+            a.onclick = function () {
+                mui.openWindow({
+                    url: "toy_info.html",
+                    id: 'toy_info.html',
+                    extras: {
+                        "toy_id": data.or_key
+                    },
+                    createNew: true
+                })
+            }
+            var img = document.createElement('img');
+            img.className = "mui-media-object mui-pull-left";
+            img.src = "./image/" + data.avatar;
+            var div = document.createElement('div');
+            div.className = "mui-media-body";
+            div.innerText = data.toy_name;
+            var p = document.createElement('p');
+            p.className = "mui-ellipsis";
+            p.innerText = data.baby_name;
+            li.appendChild(a);
+            a.appendChild(img);
+            a.appendChild(div);
+            div.appendChild(p);
+            document.getElementById("equipment_list").appendChild(li);
+        }
+
+        // 创建绑定事件 点击添加设备跳转至扫码界面
+        document.getElementById("scanning").addEventListener("tap", function () {
+            mui.toast("正在打开");
+            mui.openWindow({
+                url: 'scanning.html',
+                id: 'scanning.html',
+                createNew: true
+            })
+        });
+    })
+</script>
+</body>
+</html>

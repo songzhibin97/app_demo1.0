@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <h1 class="mui-title">我的</h1>
+</header>
+<div class="mui-content">
+    <div class="mui-content">
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell mui-media">
+                <a>
+                    <img class="mui-media-object mui-pull-left" src="image/baobao.jpg">
+                    <div class="mui-media-body" id="name">
+                    </div>
+                </a>
+            </li>
+
+        </ul>
+        <br>
+        <ul class="mui-table-view">
+            <li class="mui-table-view-cell">
+                <a class="mui-navigate-right" id="equipment">
+                    我的设备
+                </a>
+            </li>
+            <li class="mui-table-view-cell">
+                <a class="mui-navigate-right">
+                    新消息通知
+                </a>
+            </li>
+            <li class="mui-table-view-cell">
+                <a class="mui-navigate-right">
+                    隐私
+                </a>
+            </li>
+            <li class="mui-table-view-cell">
+                <a class="mui-navigate-right">
+                    通用
+                </a>
+            </li>
+        </ul>
+        <ul class="mui-table-view" style="margin-top: 25px;">
+            <li class="mui-table-view-cell">
+                <a id="about" class="mui-navigate-right">
+                    关于小彬彬的测试app
+                </a>
+            </li>
+        </ul>
+        <ul class="mui-table-view" style="margin-top: 25px;">
+            <li class="mui-table-view-cell">
+                <a style="text-align: center;color: #FF3B30;" id="outin">
+                    退出登录
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <script src="js/mui.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript">
+        mui.init();
+        mui.back = function () {
+        };
+        var self = null;
+        mui.plusReady(
+            function () {
+                self = plus.webview.currentWebview();
+                var data = self.data;
+                var nickname = self.data.nickname;
+                document.getElementById("name").innerText = nickname
+            });
+        document.getElementById('outin').addEventListener('tap', function () {
+            window.localStorage.removeItem("id");
+            mui.openWindow({
+                url: "login.html",
+                id: "login.html",
+                styles: {
+                    top: "0px",
+                    bottom: '50px'
+                }
+            })
+        });
+        document.getElementById("equipment").addEventListener("tap", function () {
+            mui.openWindow({
+                url: 'equipment.html', id: 'equipment.html', styles: {
+                    top: "0px",
+                    bottom: '50px'
+                }
+            })
+        });
+        document.getElementById("about").addEventListener("tap", function () {
+            mui.toast("小彬彬微信QQ:718428482")
+        })
+    </script>
+</div>
+</body>
+</html>

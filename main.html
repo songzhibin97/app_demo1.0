@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <h1 class="mui-title">首页</h1>
+</header>
+<div class="mui-content">
+    <div id="slider" class="mui-slider">
+        <div class="mui-slider-group mui-slider-loop">
+            <!-- 额外增加的一个节点(循环轮播：第一个节点是最后一张轮播) -->
+            <div class="mui-slider-item mui-slider-item-duplicate" id="first">
+            </div>
+            <!-- 第一张 -->
+            <div class="mui-slider-item" id="one">
+            </div>
+            <!-- 第二张 -->
+            <div class="mui-slider-item" id="two">
+            </div>
+            <!-- 第三张 -->
+            <div class="mui-slider-item" id="three">
+            </div>
+            <!-- 第四张 -->
+            <div class="mui-slider-item" id="four">
+            </div>
+            <!-- 额外增加的一个节点(循环轮播：最后一个节点是第一张轮播) -->
+            <div class="mui-slider-item mui-slider-item-duplicate" id="last">
+            </div>
+        </div>
+        <div class="mui-slider-indicator">
+            <div class="mui-indicator mui-active"></div>
+            <div class="mui-indicator"></div>
+            <div class="mui-indicator"></div>
+            <div class="mui-indicator"></div>
+        </div>
+    </div>
+
+    <div id="Refresh">
+        <ul class="mui-table-view" id="m_list">
+        </ul>
+    </div>
+    <script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript">
+        mui.init({
+            swipeBack: true, //启用右滑关闭功能
+            pullRefresh: {
+                container: "#Refresh", //下拉刷新容器标识，querySelector能定位的css选择器均可，比如：id、.class等
+                down: {
+                    style: 'circle', //必选，下拉刷新样式，目前支持原生5+ ‘circle’ 样式
+                    color: '#2BD009', //可选，默认“#2BD009” 下拉刷新控件颜色
+                    height: '50px', //可选,默认50px.下拉刷新控件的高度,
+                    range: '100px', //可选 默认100px,控件可下拉拖拽的范围
+                    offset: '0px', //可选 默认0px,下拉刷新控件的起始位置
+                    callback: pulldownRefresh
+                },
+                up: {
+                    contentrefresh: "正在努力加载啦", //可选，正在加载状态时，上拉加载控件上显示的标题内容
+                    contentnomore: '没有更多数据了', //可选，请求完毕若没有更多数据时显示的提醒内容；
+                    callback: pullupRefresh //必选，刷新函数，根据具体业务来编写，比如通过ajax从服务器获取新数据；
+                }
+            }
+        });
+        mui.plusReady(
+            function () {
+                photo_new();
+                post_m_list(0, 'down')
+            }
+        );
+        // 下拉触发事件
+        var count = 0; // 设置刚打开app欢迎语 只在启动自动刷新弹出并加载
+        function pulldownRefresh() { // 下拉事件
+            setTimeout(function () { //设置超时时间
+                photo_new();
+                post_m_list(count, 'down');
+                count += 1
+
+            }, 150);
+            mui('#Refresh').pullRefresh().endPulldownToRefresh() //结束动画
+        }
+
+        function pullupRefresh() { //上拉事件
+            setTimeout(function () { //设置超时时间
+                post_m_list(count + 1, 'up');
+                count += 1
+            }, 150);
+        }
+
+        function photo_new() { // 封装 内调用post请求向服务端发送请求并调用create_photo_new
+            mui.ajax('http://' + window.Client_ip + ':5000/photo_new', {
+                dataType: 'json', //服务器返回json格式数据
+                type: 'post', //HTTP请求类型
+                timeout: 10000, //超时时间设置为10秒；
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                success: function (data) {
+                    //服务器返回响应，根据响应结果，分析是否登录成功；	
+                    if (data.data_code == 200) {
+                        document.getElementById("first").innerHTML = "";
+                        document.getElementById("one").innerHTML = "";
+                        document.getElementById("two").innerHTML = "";
+                        document.getElementById("three").innerHTML = "";
+                        document.getElementById("four").innerHTML = "";
+                        document.getElementById("last").innerHTML = "";
+                        create_photo_new(data.data_conent[0], 'first');
+                        create_photo_new(data.data_conent[0], 'one');
+                        create_photo_new(data.data_conent[1], 'two');
+                        create_photo_new(data.data_conent[2], 'three');
+                        create_photo_new(data.data_conent[3], 'four');
+                        create_photo_new(data.data_conent[3], 'last')
+                    } else {
+                        mui('#Refresh').pullRefresh().endPullupToRefresh(true);
+                    }
+                },
+                error: function (xhr, type, errorThrown) {
+                    //异常处理；
+                    mui.toast("网络异常")
+                }
+            });
+        }
+
+        function create_photo_new(data, element_id) { // 创建函数 动态生成轮播图内容
+            var a = document.createElement("a");
+            a.href = data['path_url'];
+            var img = document.createElement('img');
+            img.src = data['image_url'];
+            a.appendChild(img);
+            var p = document.createElement('p');
+            p.innerText = data['message'];
+            a.appendChild(p);
+            document.getElementById(element_id).appendChild(a)
+        }
+
+        function post_m_list(count, model) { // 封装 内调用post请求向服务端发送请求并调用create_m_list 创建图文列表
+            mui.ajax('http://' + window.Client_ip + ':5000/m_list/' + count, {
+                dataType: 'json', //服务器返回json格式数据
+                type: 'post', //HTTP请求类型
+                timeout: 10000, //超时时间设置为10秒；
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                success: function (data) {
+                    //服务器返回响应，根据响应结果，分析是否登录成功；
+                    if (data.data_code == 200) {
+                        if (model == "down") {
+                            document.getElementById("m_list").innerHTML = ""
+                        }
+                        for (var i = 0; i < data.data_conent.length; i++) {
+                            create_m_list(data.data_conent[i], model)
+                        }
+                    } else {
+                        mui('#Refresh').pullRefresh().endPullupToRefresh(true);
+                    }
+                },
+                error: function (xhr, type, errorThrown) {
+                    //异常处理；
+                    mui.toast("网络异常")
+                }
+            });
+        }
+
+        function create_m_list(data, model) { //创建函数 动态创建图文列表
+            var li = document.createElement('li');
+            li.className = "mui-table-view-cell mui-media";
+            var a = document.createElement('a');
+            a.href = data.path_url;
+            var img = document.createElement('img');
+            img.className = "mui-media-object mui-pull-left";
+            img.src = data.image_url;
+            var div = document.createElement('div');
+            div.className = "mui-media-body";
+            div.innerText = data.title;
+            var p = document.createElement('p');
+            p.className = "mui-ellipsis";
+            p.innerText = data.content;
+            li.appendChild(a);
+            a.appendChild(img);
+            a.appendChild(div);
+            div.appendChild(p);
+            document.getElementById("m_list").appendChild(li);
+            if (model == 'down') {
+                mui('#Refresh').pullRefresh().endPulldownToRefresh(); //结束下拉动画
+            } else if (model == "up") {
+                mui('#Refresh').pullRefresh().endPullupToRefresh(false); //结束上拉动画
+            }
+        }
+
+        // 轮播图自动播放
+        var slider = mui("#slider");
+        slider.slider({
+            interval: 5000
+        });
+    </script>
+</body>
+</html>

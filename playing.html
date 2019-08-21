@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/iconfont.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title" id="title">正在播放</h1>
+</header>
+<div class="mui-content">
+    <!-- 图片 -->
+    <div style="text-align: center;">
+        <img src="" id="pictures" style="height: 250px;right: 250px;border-radius: 50%;margin: 20px auto;">
+    </div>
+
+    <!-- 弹出框 获取好友栏 -->
+
+    <div id="popover" class="mui-popover">
+        <div class="mui-scroll-wrapper">
+            <div class="mui-scroll">
+                <ul class="mui-table-view" id="choice_user">
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI控制面板 -->
+    <ul class="mui-table-view mui-grid-view mui-grid-9">
+
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a id="stop">
+                <span class="mui-icon iconfont icon-dingxiangmamazhishifufeiqianduaniconfont"></span>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a id="play_pause">
+                <span class="mui-icon iconfont icon-miniplayer_stop_icon"></span>
+            </a>
+        </li>
+        <li class="mui-table-view-cell mui-media mui-col-xs-4 mui-col-sm-4">
+            <a id="send_music" href="#popover">
+                <span class="mui-icon iconfont icon-mystep"></span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<style type="text/css">
+    #popover {
+        height: 100px;
+        width: 200px;
+    }
+</style>
+
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    mui.init();
+    // 初始化后加载标题栏以及图片
+    // 注意 data是全局变量 函数传参后请用别的变量赋值以免影响传输数据
+    var data = null;
+    mui.plusReady(
+        function () {
+            mui('.mui-scroll-wrapper').scroll();
+            var self = plus.webview.currentWebview();
+            data = self.data;
+            var intermediate = false; // 用于中间变量 判断按钮ul是播放还是暂停
+            // 修改标题栏
+            document.getElementById("title").innerText = "正在播放" + data.title;
+            var pictures = document.getElementById('pictures');
+            // 增加播放图片
+            pictures.src = data.cover_url;
+            // 创建音频对象
+            var now_audio = plus.audio.createPlayer(data.play_path);
+            // 播放音频
+            now_audio.play();
+            // 绑定暂停播放控件事件
+            document.getElementById("play_pause").addEventListener('tap', function () {
+                var get_class_list = document.getElementById("play_pause").firstElementChild.classList;
+                if (intermediate == false) {
+                    // 如果是播放 改ui图表至暂停
+                    document.getElementById("play_pause").firstElementChild.classList.remove('icon-miniplayer_stop_icon');
+
+                    document.getElementById("play_pause").firstElementChild.classList.add("icon-stop_white");
+                    // 暂停音频并更改中间变量状态
+                    now_audio.pause();
+                    intermediate = true
+                } else {
+                    document.getElementById("play_pause").firstElementChild.classList.remove('icon-stop_white');
+
+                    document.getElementById("play_pause").firstElementChild.classList.add("icon-miniplayer_stop_icon");
+                    // 继续播放并更改中间变量状态
+                    now_audio.resume();
+                    now_audio.play();
+                    intermediate = false
+                }
+            });
+            // 绑定停止控件事件
+            document.getElementById("stop").addEventListener('tap', function () {
+                document.getElementById("play_pause").firstElementChild.classList.remove('icon-miniplayer_stop_icon');
+                document.getElementById("play_pause").firstElementChild.classList.add("icon-stop_white");
+                now_audio.stop();
+                now_audio = plus.audio.createPlayer(data.play_path);
+                intermediate = true
+            })
+        });
+    // 绑定弹出菜单选择好友发送点击事件
+    document.getElementById("send_music").addEventListener('tap', function () {
+        //发送请求获取当前用户好友
+        mui.ajax('http://' + window.Client_ip + ':5000/get_friends', {
+            data: {
+                "id": window.localStorage.getItem("id"),
+                "type": "app"
+            },
+            dataType: 'json',//服务器返回json格式数据
+            type: 'POST',//HTTP请求类型
+            timeout: 1000,//超时时间设置为10秒；
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            success: function (data) {
+                if (data.code == 200) {
+                    if (data.friend_dict == []) {
+                        return
+                    } else {
+                        for (var i = 0; i < data.friend_dict.length; i++) {
+                            create_popover(data.friend_dict[i])
+                        }
+                    }
+                } else {
+                    mui.toast(data.error);
+                }
+            },
+            error: function (xhr, type, errorThrown) {
+                alert("网络错误");
+
+            }
+        });
+    });
+
+    // 创建弹出菜单子菜单创建函数
+    function create_popover(friend_data) {
+        var li = document.createElement("li");
+        li.className = "mui-table-view-cell";
+        var a = document.createElement("a");
+        a.innerText = friend_data.friend_name;
+        a.onclick = function () {
+            data["from_id"] = window.localStorage.getItem("id");
+            data["is_send"] = true;
+            var toy_id = friend_data.friend_id;
+            var index = plus.webview.getWebviewById("HBuilder");
+            mui.fire(index, "send_toy_audio", {
+                "toy_id": toy_id,
+                // 不保存为记录
+                "data": data
+            });
+            mui.toast("发送成功")
+        };
+        li.appendChild(a);
+        document.getElementById("choice_user").appendChild(li)
+    }
+</script>
+</body>
+</html>

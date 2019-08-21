@@ -1,0 +1,184 @@
+<!doctype html>
+<!DOCTYPE html>
+<html class="ui-page-login">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <title></title>
+    <link href="css/mui.min.css" rel="stylesheet"/>
+    <link href="css/style.css" rel="stylesheet"/>
+    <style>
+        .area {
+            margin: 20px auto 0px auto;
+        }
+
+        .mui-input-group {
+            margin-top: 10px;
+        }
+
+        .mui-input-group:first-child {
+            margin-top: 20px;
+        }
+
+        .mui-input-group label {
+            width: 35%;
+        }
+
+        .mui-input-row label ~ input,
+        .mui-input-row label ~ select,
+        .mui-input-row label ~ textarea {
+            width: 65%;
+        }
+
+        .mui-checkbox input[type=checkbox],
+        .mui-radio input[type=radio] {
+            top: 6px;
+        }
+
+        .mui-content-padded {
+            margin-top: 25px;
+        }
+
+        .mui-btn {
+            padding: 10px;
+        }
+
+        .link-area {
+            display: block;
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .spliter {
+            color: #bbb;
+            padding: 0px 8px;
+        }
+
+        .oauth-area {
+            position: absolute;
+            bottom: 20px;
+            left: 0px;
+            text-align: center;
+            width: 100%;
+            padding: 0px;
+            margin: 0px;
+        }
+
+        .oauth-area .oauth-btn {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background-size: 30px 30px;
+            background-position: center center;
+            background-repeat: no-repeat;
+            margin: 0px 20px;
+            /*-webkit-filter: grayscale(100%); */
+            border: solid 1px #ddd;
+            border-radius: 25px;
+        }
+
+        .oauth-area .oauth-btn:active {
+            border: solid 1px #aaa;
+        }
+
+        .oauth-area .oauth-btn.disabled {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title">创建玩具</h1>
+</header>
+<div class="mui-content">
+    <form id='login-form' class="mui-input-group">
+        <div class="mui-input-row">
+            <label>玩具名称</label>
+            <input id='toy_name' type="text" class="mui-input-clear mui-input" placeholder="请输入玩具名称">
+        </div>
+        <div class="mui-input-row">
+            <label>宝宝名称</label>
+            <input id='baby_name' type="text" class="mui-input-clear mui-input" placeholder="请输入宝宝名称">
+        </div>
+        <div class="mui-input-row">
+            <label>对您的称呼</label>
+            <input id='nickname' type="text" class="mui-input-clear mui-input" placeholder="请输入对您的称呼">
+        </div>
+    </form>
+
+    <div class="mui-content-padded">
+        <button id='create_toy' type="button" class="mui-btn mui-btn-block mui-btn-primary">创建玩具</button>
+    </div>
+    <div class="mui-content-padded oauth-area">
+    </div>
+</div>
+<script src="js/mui.min.js"></script>
+<script src="js/mui.enterfocus.js"></script>
+<script src="js/app.js"></script>
+<script type="text/javascript">
+    mui.init({
+        gestureConfig: {
+            tap: true, //默认为true
+            doubletap: true, //默认为false
+            longtap: true, //默认为false
+            swipe: true, //默认为true
+            drag: true, //默认为true
+            hold: false, //默认为false，不监听
+            release: false //默认为false，不监听
+        }
+    });
+    // 获取传递数据
+    var self = null;
+    var or_key = null;
+    mui.plusReady(function () {
+        self = plus.webview.currentWebview();
+        or_key = self.or_key
+    });
+
+    // 绑定创建时间
+    document.getElementById("create_toy").addEventListener("tap", function () {
+        var toy_name = document.getElementById("toy_name").value;
+        var baby_name = document.getElementById("baby_name").value;
+        var nickname = document.getElementById("nickname").value;
+
+        if (!toy_name) {
+            mui.toast("玩具名称不能为空");
+            return
+        }
+        if (!baby_name) {
+            mui.toast("宝宝名称不能为空");
+            return
+        }
+        if (!nickname) {
+            mui.toast("对您的称呼不能为空");
+            return
+        }
+
+        mui.post('http://' + window.Client_ip + ":5000/create_toy", {
+            toy_name: toy_name,
+            baby_name: baby_name,
+            nickname: nickname,
+            app_id: window.localStorage.getItem("id"),
+            or_key: or_key
+        }, function (data) {
+            if (data.code == 200) {
+                mui.toast("设备绑定成功");
+                mui.openWindow({
+                    url: 'equipment.html',
+                    id: 'equipment.html',
+                    styles: {
+                        top: "0px",
+                        bottom: '50px'
+                    },
+                })
+            }
+        }, 'json');
+
+
+    })
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/chat.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title" id="title"></h1>
+</header>
+<div class="mui-content" id="message">
+
+
+</div>
+<nav class="mui-bar mui-bar-tab">
+    <a class="mui-tab-item mui-active" id='hold_release'>
+        <span class="mui-icon mui-icon-mic"></span>
+        <span class="mui-tab-label">按住 说话</span>
+    </a>
+</nav>
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    mui.init({
+        gestureConfig: {
+            tap: true, //默认为true
+            doubletap: false, //默认为false
+            longtap: false, //默认为false
+            swipe: false, //默认为true
+            drag: false, //默认为true
+            hold: true, //默认为false，不监听
+            release: true //默认为false，不监听
+        }
+    });
+    var self = null;
+    var data = null;
+    var recording = null;
+    var task = null;
+    var response_data = null;
+    var now_audio = null;
+    mui.plusReady(function () {
+        // 获取friends传递的数据
+        self = plus.webview.currentWebview();
+        data = self.data;
+        create_historical_dom()
+        // 更改标题栏
+        document.getElementById("title").innerText = '正在与' + data.friend_nickname + "进行聊天"
+    });
+    // 绑定 按住说话事件
+    document.getElementById("hold_release").addEventListener("hold", function () {
+        mui.toast("正在录音")
+        // 录音操作
+        recording = plus.audio.getRecorder();
+        recording.record({
+            filename: "_doc/audio/"
+        }, function (path) {
+            // 录音成功上传音频文件 调用上传函数
+            createUpload(path)
+
+        }, function (e) {
+            alert("Audio record failed: " + e.message);
+        });
+    });
+
+
+    // 绑定 松手发送事件
+    document.getElementById("hold_release").addEventListener("release", function () {
+        recording.stop()
+        mui.toast("录音结束")
+    });
+
+    // 创建上传任务函数
+    function createUpload(path) {
+        var task = plus.uploader.createUpload('http://' + window.Client_ip + ':5000/upload_file', {}, function (t, status) {
+            // 上传完成
+            if (status == 200) {
+                response_data = JSON.parse(t.responseText);
+                // 调用接口发给玩具端
+                var index = plus.webview.getWebviewById("HBuilder");
+                mui.fire(index, "send_toy_audio", {
+                    "toy_id": data.friend_id,
+                    "chat": data.friend_chat,
+                    "data": {
+                        "file_name": response_data.file_name,
+                        "voice_message": true,
+                        "is_send": true,
+                        "from_id": window.localStorage.getItem("id")
+                    }
+                });
+                // 成功后再此页面建立一个 信息样式并绑定事件点击获取该音频并播放
+            } else {
+                // 失败则返回对应的error信息
+                response_data = JSON.parse(t.responseText);
+                mui.toast(response_data.error);
+            }
+        });
+        task.addFile(path, {key: "audio_file"});
+        task.addData("string_key", "string_value");
+        //task.addEventListener( "statechanged", onStateChanged, false );
+        task.start();
+    }
+
+    // 监听事件 发送或接受消息生成dom结构
+    document.addEventListener("create_message", function (create_data) {
+        create_message_dom(create_data, false)
+    });
+
+    // 获取历史消息并展现出来
+    function create_historical_dom() {
+        mui.get('http://' + window.Client_ip + ':5000/get_chat_historical/' + data.friend_chat, function (data) {
+                if (data.code == 200) {
+                    for (var i = 0; i < data.friend_list.length; i++) {
+                        create_message_dom(data.friend_list[i], true)
+                    }
+                } else {
+                    mui.toast("网络错误")
+                }
+            }, 'json'
+        );
+    }
+
+    // 创建消息函数
+    function create_message_dom(create_datas, is_his) {
+        var create_data = null;
+        var div1_class = "leftd";
+        var span_class = "leftd_h";
+        var div2_class = "left speech";
+        var div2_text = "点击播放歌曲";
+        if (is_his) {
+            create_data = create_datas
+        } else {
+            create_data = create_datas.detail.data
+        }
+        if (create_data.voice_message) {
+            div2_text = "点击播放语言消息"
+        }
+
+        if (create_data.is_send) {
+            // 判断是否是本机发送消息
+            div1_class = "rightd";
+            span_class = "rightd_h";
+            div2_class = "right speech";
+        }
+        var div1 = document.createElement("div");
+        div1.className = div1_class;
+        var span = document.createElement("span");
+        span.className = span_class;
+        var img = document.createElement("img");
+        img.src = "image/baobao.jpg";
+        var div2 = document.createElement("div");
+        div2.className = div2_class;
+        div2.innerText = div2_text;
+        div2.onclick = function () {
+            now_audio = plus.audio.createPlayer("http://" + window.Client_ip + ":5000/get_local_audio/" + create_data.file_name);
+            now_audio.play();
+        };
+        div1.appendChild(span);
+        span.appendChild(img);
+        div1.appendChild(div2);
+        document.getElementById("message").appendChild(div1)
+    }
+</script>
+</body>
+</html>

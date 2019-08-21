@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title" id="title"></h1>
+</header>
+<div class="mui-content">
+    <!-- 图片 -->
+    <div style="text-align: center;">
+        <img src="image/toy.jpg" id="pictures" style="height: 100px;right: 100px;border-radius: 50%;margin: 20px auto;">
+    </div>
+</div>
+<!-- 列表 -->
+<ul class="mui-table-view">
+    <li class="mui-table-view-cell">
+        <a class="mui-navigate-right">
+            玩具名称 : <span id="toy_name"></span>
+        </a>
+    </li>
+    <li class="mui-table-view-cell">
+        <a class="mui-navigate-right">
+            宝宝名称 : <span id="baby_name"></span>
+        </a>
+    </li>
+    <li class="mui-table-view-cell">
+        <a class="mui-navigate-right">
+            设备编号 : <span id="toy_id"></span>
+        </a>
+    </li>
+    <li class="mui-table-view-cell">
+        <a class="mui-navigate-right">
+            <img src="" id="or" width="100" height="100">
+        </a>
+    </li>
+    <li class="mui-table-view-cell">
+        <a class="mui-navigate-right" id="friend_request">
+            <span class="mui-badge mui-badge-danger">New</span>
+            <!-- 绑定事件 跳转至好友请求 -->
+            好友请求
+        </a>
+    </li>
+</ul>
+
+<div style="text-align: center;">======== 玩具通讯录 ========</div>
+
+<ul class="mui-table-view mui-grid-view" id="table">
+    <li class="mui-table-view-cell mui-media mui-col-xs-3">
+        <a href="#" id="scanning">
+            <img class="mui-media-object" src="image/friend.jpeg">
+            <div class="mui-media-body">添加好友</div>
+        </a>
+    </li>
+</ul>
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    mui.init();
+    var toy_id = null;
+    mui.plusReady(function () {
+        // 获取equipment点击玩具事件传递的or_key 
+        var self = plus.webview.currentWebview();
+        toy_id = self.toy_id;
+        // 向后端获取对应的玩具信息
+        mui.post('http://' + window.Client_ip + ":5000/get_toy_info", {
+            toy_id: toy_id
+        }, function (data) {
+            if (data.code == 200) {
+                document.getElementById("title").innerText = data.info.toy_name + '详情';
+                document.getElementById('toy_name').innerText = data.info.toy_name;
+                document.getElementById("baby_name").innerText = data.info.baby_name;
+                document.getElementById("toy_id").innerText = toy_id;
+                document.getElementById("or").src = 'http://' + window.Client_ip + ":5000/get_or/" + toy_id;
+                // 动态创建好友通讯录
+                for (var i = 0; i < data.info.friends.length; i++) {
+                    create_table(data.info.friends[i])
+                }
+            } else {
+                mui.toast(data.error)
+            }
+        }, 'json');
+
+        // 绑定添加好友事件 点击添加设备跳转至扫码界面
+        document.getElementById("scanning").addEventListener("tap", function () {
+            mui.toast("正在打开");
+            mui.openWindow({
+                url: 'scanning.html',
+                id: 'scanning.html',
+                extras: {
+                    "toy_id": toy_id
+                },
+                createNew: true
+
+            })
+        });
+    });
+    // 监听scanning.html触发open_fiends.html事件
+    document.addEventListener("open_fiends", function (data) {
+
+        mui.openWindow({
+            url: 'add_friend.html',
+            id: 'add_friend.html',
+            extras: {
+                "toy_id": data.detail.toy_id,
+                "to_toy": data.detail.to_toy
+            },
+            createNew: true
+        })
+    });
+    // 点击好友请求 跳转至请求列表
+    document.getElementById("friend_request").addEventListener("tap", function () {
+        mui.openWindow({
+            url: 'friend_request.html',
+            id: 'friend_request.html',
+            extras: {
+                "toy_id": toy_id,
+            },
+            createNew: true
+        })
+    });
+
+    // 创建图文列表
+    function create_table(data) {
+        // "data":{"friend_avatar":"app.jpg","friend_chat":"5d440e2930c8049a5e3ba4ba","friend_id":"5d440df230c8049a5e3ba4b9","friend_name":"可爱彬","friend_nickname":"芭比","friend_type":"app"},
+        var li = document.createElement("li");
+        li.className = 'mui-table-view-cell mui-media mui-col-xs-3';
+        var a = document.createElement("a");
+        var img = document.createElement("img");
+        img.className = "mui-media-object";
+        if (data.friend_avatar == "app.jpg") {
+            img.src = 'image/app.jpg'
+        } else {
+            img.src = 'image/toy.jpg'
+        }
+
+        var div = document.createElement('div');
+        div.className = 'mui-media-body';
+        if (data.friend_nickname) {
+            div.innerText = data.friend_nickname
+        } else {
+            div.innerText = data.friend_name
+        }
+        li.appendChild(a);
+        a.appendChild(img);
+        a.appendChild(div);
+        document.getElementById("table").appendChild(li)
+
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title">好友请求列表</h1>
+</header>
+<div class="mui-content">
+    <ul class="mui-table-view" id="m_list">
+    </ul>
+</div>
+
+<script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    mui.init();
+    var toy_id = null;
+    mui.plusReady(function () {
+        var self = plus.webview.currentWebview();
+        toy_id = self.toy_id;
+        mui.post('http://' + window.Client_ip + ':5000/get_friend_request', {
+            toy_id: toy_id,
+        }, function (data) {
+            //服务器返回响应，根据响应结果，分析是否登录成功；
+            if (data.code == 200) {
+                if (data.request_list) {
+                    for (var i = 0; i < data.request_list.length; i++) {
+                        create_m_list(data.request_list[i])
+                    }
+                } else {
+                    // 如果没有好友请求
+                    var li = document.createElement('li');
+                    li.className = "mui-table-view-cell mui-media";
+                    var a = document.createElement('a');
+                    var img = document.createElement('img');
+                    img.className = "mui-media-object mui-pull-left";
+                    var div = document.createElement('div');
+                    div.className = "mui-media-body";
+                    div.innerText = "无好友请求";
+                    var p = document.createElement('p');
+                    p.className = "mui-ellipsis";
+                    li.appendChild(a);
+                    a.appendChild(img);
+                    a.appendChild(div);
+                    div.appendChild(p);
+                    document.getElementById("m_list").appendChild(li);
+                }
+            } else {
+                mui.toast('error')
+            }
+        }, 'json');
+    });
+
+    function create_m_list(data) { //创建函数 动态创建图文列表
+        var li = document.createElement('li');
+        li.className = "mui-table-view-cell mui-media";
+        var a = document.createElement('a');
+        a.href = data.path_url;
+        var img = document.createElement('img');
+        img.className = "mui-media-object mui-pull-left";
+        img.src = "image/toy.jpg";
+        var div = document.createElement('div');
+        div.className = "mui-media-body";
+        div.innerText = data.from_info.toy_name;
+        var p = document.createElement('p');
+        p.className = "mui-ellipsis";
+        p.innerText = data.request_info;
+        li.appendChild(a);
+        a.appendChild(img);
+        a.appendChild(div);
+        div.appendChild(p);
+        var button1 = document.createElement("button");
+        button1.className = "mui-btn mui-btn-success mui-btn-outlined";
+        button1.innerText = "接受";
+        button1.onclick = function () {
+            send_dict = {
+                toy_nickname: data.friend_nickname,
+                toy_id: toy_id,
+                from_id: data.from_info.or_key
+            }
+            mui.openWindow({
+                url: "dispose_request.html",
+                id: "dispose_request.html",
+                extras: {
+                    data: send_dict
+                }
+            })
+        }
+        li.appendChild(button1)
+        document.getElementById("m_list").appendChild(li);
+    }
+</script>
+</body>
+</html>

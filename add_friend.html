@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Document</title>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css"/>
+    <style>
+        .area {
+            margin: 20px auto 0px auto;
+        }
+
+        .mui-input-group {
+            margin-top: 10px;
+        }
+
+        .mui-input-group:first-child {
+            margin-top: 20px;
+        }
+
+        .mui-input-group label {
+            width: 35%;
+        }
+
+        .mui-input-row label ~ input,
+        .mui-input-row label ~ select,
+        .mui-input-row label ~ textarea {
+            width: 65%;
+        }
+
+        .mui-checkbox input[type=checkbox],
+        .mui-radio input[type=radio] {
+            top: 6px;
+        }
+
+        .mui-content-padded {
+            margin-top: 25px;
+        }
+
+        .mui-btn {
+            padding: 10px;
+        }
+
+        .link-area {
+            display: block;
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .spliter {
+            color: #bbb;
+            padding: 0px 8px;
+        }
+
+        .oauth-area {
+            position: absolute;
+            bottom: 20px;
+            left: 0px;
+            text-align: center;
+            width: 100%;
+            padding: 0px;
+            margin: 0px;
+        }
+
+        .oauth-area .oauth-btn {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background-size: 30px 30px;
+            background-position: center center;
+            background-repeat: no-repeat;
+            margin: 0px 20px;
+            /*-webkit-filter: grayscale(100%); */
+            border: solid 1px #ddd;
+            border-radius: 25px;
+        }
+
+        .oauth-area .oauth-btn:active {
+            border: solid 1px #aaa;
+        }
+
+        .oauth-area .oauth-btn.disabled {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title">添加新朋友</h1>
+</header>
+<div class="mui-content">
+    <form id='login-form' class="mui-input-group">
+        <div class="mui-input-row">
+            <label>请求信息</label>
+            <input id='request_info' type="text" class="mui-input-clear mui-input" placeholder="请输入请求信息">
+        </div>
+        <div class="mui-input-row">
+            <label>好友备注</label>
+            <input id='friend_nickname' type="text" class="mui-input-clear mui-input" placeholder="请输入好友备注">
+        </div>
+        <br>
+        <div style="text-align: center;">PS:好友备注发音尽量不要重复</div>
+        <br>
+    </form>
+    <div class="mui-content-padded">
+        <button id='send_request' type="button" class="mui-btn mui-btn-block mui-btn-primary">发送请求</button>
+
+    </div>
+
+    <script src="js/mui.min.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript">
+        mui.init();
+        var toy_id = null;
+        var to_toy = null;
+
+        mui.plusReady(function () {
+            var self = plus.webview.currentWebview();
+            toy_id = self.toy_id;
+            to_toy = self.to_toy;
+            // 绑定发送请求事件
+            document.getElementById("send_request").addEventListener("tap", function () {
+                var request_info = document.getElementById("request_info").value;
+                var friend_nickname = document.getElementById("friend_nickname").value;
+                if (request_info && friend_nickname) {
+                    // 向后端发送请求
+                    mui.post('http://' + window.Client_ip + ':5000/send_friend_request', {
+                        toy_id: toy_id,
+                        to_toy: to_toy,
+                        request_info: request_info,
+                        friend_nickname: friend_nickname
+
+                    }, function (data) {
+                        //服务器返回响应，根据响应结果，分析是否登录成功；
+                        if (data.code == 200) {
+                            mui.toast(data.message)
+                        } else {
+                            mui.toast(data.error)
+                        }
+                        mui.back()
+
+                    }, 'json');
+
+                } else {
+                    mui.toast("请求信息或备注不能为空")
+                }
+
+            })
+        })
+    </script>
+</body>
+</html>
+˚
